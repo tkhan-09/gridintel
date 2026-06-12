@@ -1,0 +1,70 @@
+# ============================================================
+# GridIntel Backend Dependencies
+# ============================================================
+
+# --- Web Framework ---
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+uvloop==0.21.0
+httptools==0.6.4
+python-multipart==0.0.17
+
+# --- Database (Async) ---
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+psycopg2-binary==2.9.10
+
+# --- Pydantic & Settings ---
+pydantic==2.10.3
+pydantic[email]==2.10.3
+pydantic-settings==2.6.1
+email-validator==2.2.0
+
+# --- Authentication & Security ---
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
+cryptography==44.0.0
+itsdangerous==2.2.0
+
+# --- Redis & Task Queue ---
+redis[hiredis]==5.2.1
+arq==0.26.1
+
+# --- WebSockets ---
+websockets==14.1
+
+# --- HTTP Client ---
+httpx==0.28.1
+aiohttp==3.11.10
+
+# --- AI / LLM Clients ---
+groq==0.13.1
+google-generativeai==0.8.3
+openai==1.58.1
+
+# --- Vector / RAG ---
+pgvector==0.3.6
+numpy==2.2.0
+tiktoken==0.8.0
+
+# --- Data Processing ---
+pandas==2.2.3
+openpyxl==3.1.5
+
+# --- PDF Generation ---
+reportlab==4.3.0
+pypdf==5.1.0
+
+# --- Logging & Monitoring ---
+loguru==0.7.3
+sentry-sdk[fastapi]==2.19.2
+
+# --- Utilities ---
+python-dotenv==1.0.1
+orjson==3.10.12
+pytz==2024.2
+python-dateutil==2.9.0.post0
+tenacity==9.0.0
+anyio==4.7.0

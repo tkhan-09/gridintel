@@ -1,0 +1,8 @@
+f = open('/app/app/models/office.py')
+c = f.read()
+f.close()
+c = c.replace('from app.core.database import Base', 'from app.models.base import Base')
+f = open('/app/app/models/office.py', 'w')
+f.write(c)
+f.close()
+print('Done')

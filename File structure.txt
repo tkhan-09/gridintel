@@ -1,0 +1,262 @@
+gridintel/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── middleware.ts
+│   │   ├── app/
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── (dashboard)/
+│   │   │   │   ├── layout.tsx
+│   │   │   │   ├── adjustments/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── ai-copilot/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── analytics/
+│   │   │   │   │   ├── company/
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   ├── fuel/
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   ├── loss/
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   ├── office/
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   └── voltage/
+│   │   │   │   │       └── page.tsx
+│   │   │   │   ├── audit/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── billing/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── cross-border/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── dashboard/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── energy-accounting/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── fuel-management/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── generation-management/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── import/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── invoice-management/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── master-data/
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   │   └── page.tsx.bak
+│   │   │   │   ├── meters/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── mod/
+│   │   │   │   │   └── [month]/
+│   │   │   │   │       └── page.tsx
+│   │   │   │   ├── mod-entry/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── outstanding-bills/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── plants/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── reports/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── revenue-tracking/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── settings/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── submission/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── users/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── utility-sales/
+│   │   │   │       └── page.tsx
+│   │   │   └── login/
+│   │   │       └── page.tsx
+│   │   ├── components/
+│   │   │   ├── layout/
+│   │   │   │   ├── AlertsPanel.tsx
+│   │   │   │   ├── FilterBar.tsx
+│   │   │   │   ├── NotificationBell.tsx
+│   │   │   │   ├── Shell.tsx
+│   │   │   │   ├── Sidebar.tsx
+│   │   │   │   └── Topbar.tsx
+│   │   │   └── ui/
+│   │   │       └── index.tsx
+│   │   ├── hooks/
+│   │   ├── lib/
+│   │   │   ├── api_client.ts
+│   │   │   └── utils.ts
+│   │   ├── store/
+│   │   │   ├── authStore.ts
+│   │   │   ├── copilotStore.ts
+│   │   │   └── global_stores.ts
+│   │   └── types/
+│   │
+│   ├── public/
+│   │   └── favicon.ico
+│   │
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tsconfig.json
+│   ├── next.config.js
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   └── .env.local
+│
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── routes/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── auth.py
+│   │   │   │   ├── users.py
+│   │   │   │   ├── dashboard.py
+│   │   │   │   ├── analytics.py
+│   │   │   │   ├── energy.py
+│   │   │   │   ├── fuel.py
+│   │   │   │   ├── billing.py
+│   │   │   │   ├── reports.py
+│   │   │   │   ├── master_data.py
+│   │   │   │   └── ocr.py
+│   │   │   └── dependencies/
+│   │   │       ├── __init__.py
+│   │   │       ├── auth.py
+│   │   │       └── database.py
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py
+│   │   │   ├── security.py
+│   │   │   ├── database.py
+│   │   │   └── redis.py
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── energy_data.py
+│   │   │   ├── fuel_data.py
+│   │   │   ├── plant.py
+│   │   │   ├── meter.py
+│   │   │   ├── invoice.py
+│   │   │   └── audit_log.py
+│   │   ├── schemas/
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── energy.py
+│   │   │   ├── fuel.py
+│   │   │   ├── billing.py
+│   │   │   └── common.py
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── energy_service.py
+│   │   │   ├── fuel_service.py
+│   │   │   ├── billing_service.py
+│   │   │   ├── analytics_service.py
+│   │   │   ├── report_service.py
+│   │   │   ├── ocr_service.py
+│   │   │   └── email_service.py
+│   │   ├── repositories/
+│   │   │   ├── __init__.py
+│   │   │   ├── base_repository.py
+│   │   │   ├── user_repository.py
+│   │   │   ├── energy_repository.py
+│   │   │   ├── fuel_repository.py
+│   │   │   └── plant_repository.py
+│   │   ├── utils/
+│   │   │   ├── __init__.py
+│   │   │   ├── helpers.py
+│   │   │   ├── validators.py
+│   │   │   ├── formatters.py
+│   │   │   └── exceptions.py
+│   │   └── middleware/
+│   │       ├── __init__.py
+│   │       ├── auth.py
+│   │       ├── logging.py
+│   │       └── rate_limit.py
+│   │
+│   ├── migrations/
+│   │   ├── versions/
+│   │   ├── env.py
+│   │   ├── script.py.mako
+│   │   └── alembic.ini
+│   │
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── test_api/
+│   │   ├── test_services/
+│   │   └── test_models/
+│   │
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   ├── .env
+│   ├── .env.example
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   └── alembic.ini
+│
+├── ocr-service/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   └── ocr.py
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   └── config.py
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── paddle_ocr.py
+│   │   │   ├── image_processor.py
+│   │   │   └── text_extractor.py
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       └── file_utils.py
+│   │
+│   ├── models/
+│   │   └── ocr_models/
+│   │       ├── cls/
+│   │       ├── det/
+│   │       └── rec/
+│   │
+│   ├── temp/
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── .env
+│
+├── database/
+│   ├── init.sql
+│   ├── seed.sql
+│   └── migrations/
+│
+├── nginx/
+│   ├── nginx.conf
+│   └── sites-enabled/
+│       └── gridintel.conf
+│
+├── docker/
+│   ├── docker-compose.yml
+│   ├── docker-compose.dev.yml
+│   └── docker-compose.prod.yml
+│
+├── scripts/
+│   ├── setup.sh
+│   ├── deploy.sh
+│   ├── backup.sh
+│   └── seed_data.py
+│
+├── docs/
+│   ├── api/
+│   │   ├── openapi.yaml
+│   │   └── postman_collection.json
+│   ├── README.md
+│   └── ARCHITECTURE.md
+│
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── deploy.yml
+│
+├── .gitignore
+├── README.md
+└── LICENSE

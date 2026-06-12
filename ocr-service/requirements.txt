@@ -1,0 +1,30 @@
+# GridIntel OCR Microservice — Python Dependencies
+# Python 3.11 | PaddleOCR + FastAPI
+
+# ── Web framework ─────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9        # Required for FastAPI file uploads (UploadFile)
+httpx==0.27.0                  # Async HTTP client (used for health probes)
+
+# ── OCR engine ────────────────────────────────────────────────────────────────
+# paddlepaddle is installed separately in Dockerfile (CPU wheel)
+# paddlepaddle==2.6.1
+paddleocr==2.7.3               # Includes detection, recognition, angle classification
+
+# ── Image processing ─────────────────────────────────────────────────────────
+opencv-python-headless==4.9.0.80   # OpenCV without GUI (headless for Docker)
+Pillow==10.3.0                     # PIL for image loading and conversion
+numpy==1.26.4                      # Numerical array operations
+
+# ── PDF processing ────────────────────────────────────────────────────────────
+PyPDF2==3.0.1                      # PDF reading and page extraction
+pdf2image==1.17.0                  # PDF → PIL image via poppler (system dep)
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv==1.0.1               # Environment variable loading
+pydantic==2.7.1                    # Data validation (used by FastAPI)
+pydantic-settings==2.2.1           # Settings management
+
+# ── Optional: semantic embeddings for future RAG integration ─────────────────
+# sentence-transformers==2.7.0     # Uncomment to enable embedding generation

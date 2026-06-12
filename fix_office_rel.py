@@ -1,0 +1,8 @@
+f = open('/app/app/models/user.py')
+c = f.read()
+f.close()
+c = c.replace('back_populates="users",\n        lazy="select",', 'lazy="select",')
+f = open('/app/app/models/user.py', 'w')
+f.write(c)
+f.close()
+print('Done')

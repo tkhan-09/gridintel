@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts Import ─────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Rajdhani:wght@500;600;700&display=swap');
+
+/* ── CSS Variables ───────────────────────────────────────────────────────── */
+:root {
+  --font-sans:    'DM Sans', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --font-display: 'Rajdhani', system-ui, sans-serif;
+
+  --color-bg:       #001B2A;
+  --color-surface:  #112240;
+  --color-card:     #1A2B45;
+  --color-border:   #1E3A5F;
+  --color-hover:    #243B55;
+  --color-cyan:     #00D4FF;
+  --color-text-1:   #F4F6F9;
+  --color-text-2:   #8892B0;
+
+  --sidebar-width:  260px;
+  --topbar-height:  60px;
+
+  --scrollbar-track: #112240;
+  --scrollbar-thumb: #1E3A5F;
+}
+
+/* ── Base Reset ──────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text-1);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Custom Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track  { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2a4f7a; }
+
+/* ── Typography ─────────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-text-1);
+}
+
+/* ── Utility classes ─────────────────────────────────────────────────────── */
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-navy-card rounded-lg border border-navy-border shadow-card;
+  }
+  .card-hover {
+    @apply card transition-colors duration-150 hover:border-cyan/30 hover:shadow-cyan-sm;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full bg-navy-surface border border-navy-border rounded text-text-primary
+           placeholder:text-text-muted text-sm px-3 py-2
+           focus:outline-none focus:ring-1 focus:ring-cyan/50 focus:border-cyan/50
+           transition-colors;
+  }
+  .input-error {
+    @apply border-status-error focus:ring-status-error/50 focus:border-status-error;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-medium
+           transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-0
+           disabled:opacity-50 disabled:cursor-not-allowed select-none;
+  }
+  .btn-primary {
+    @apply btn bg-cyan text-navy-bg hover:bg-cyan-light focus:ring-cyan/50
+           shadow-cyan-sm hover:shadow-cyan;
+  }
+  .btn-ghost {
+    @apply btn text-text-secondary hover:text-text-primary hover:bg-navy-hover
+           focus:ring-navy-border;
+  }
+  .btn-outline {
+    @apply btn border border-navy-border text-text-secondary hover:border-cyan/50
+           hover:text-cyan focus:ring-cyan/30;
+  }
+  .btn-danger {
+    @apply btn bg-status-error/10 text-status-error border border-status-error/30
+           hover:bg-status-error/20 focus:ring-status-error/40;
+  }
+  .btn-success {
+    @apply btn bg-status-success/10 text-status-success border border-status-success/30
+           hover:bg-status-success/20 focus:ring-status-success/40;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+  .btn-icon {
+    @apply btn p-2 aspect-square;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+
+  /* Table */
+  .table-grid {
+    @apply w-full border-collapse text-sm;
+  }
+  .table-grid th {
+    @apply px-3 py-2.5 text-left text-xs font-semibold text-text-secondary uppercase
+           tracking-wider border-b border-navy-border bg-navy-surface/50 whitespace-nowrap;
+  }
+  .table-grid td {
+    @apply px-3 py-2 text-text-primary border-b border-navy-border/50 whitespace-nowrap;
+  }
+  .table-grid tr:hover td {
+    @apply bg-navy-hover/50;
+  }
+
+  /* Sidebar nav link */
+  .nav-link {
+    @apply flex items-center gap-3 px-3 py-2 rounded text-sm text-text-secondary
+           hover:text-text-primary hover:bg-navy-hover transition-colors duration-100
+           cursor-pointer;
+  }
+  .nav-link.active {
+    @apply text-cyan bg-cyan/10 font-medium;
+  }
+  .nav-section {
+    @apply text-2xs font-semibold tracking-widest uppercase text-text-muted
+           px-3 pt-5 pb-1.5;
+  }
+
+  /* Status badge colors */
+  .status-draft     { @apply badge bg-text-muted/20 text-text-secondary; }
+  .status-submitted { @apply badge bg-status-info/10 text-status-info; }
+  .status-verified  { @apply badge bg-status-success/10 text-status-success; }
+  .status-locked    { @apply badge bg-status-locked/10 text-status-locked; }
+  .status-pending   { @apply badge bg-status-warning/10 text-status-warning; }
+  .status-paid      { @apply badge bg-status-success/10 text-status-success; }
+  .status-overdue   { @apply badge bg-status-error/10 text-status-error; }
+
+  /* KPI card */
+  .kpi-card {
+    @apply card p-5 flex flex-col gap-2;
+  }
+
+  /* Shimmer loading */
+  .shimmer {
+    @apply bg-navy-hover animate-shimmer;
+    background-image: linear-gradient(
+      90deg,
+      #1A2B45 0%,
+      #243B55 50%,
+      #1A2B45 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  /* Section header */
+  .section-header {
+    @apply flex items-center justify-between mb-5;
+  }
+  .section-title {
+    @apply font-display text-lg font-semibold text-text-primary;
+  }
+
+  /* Mono numbers */
+  .num {
+    @apply font-mono tabular-nums;
+  }
+
+  /* Cyan accent bar */
+  .cyan-bar {
+    @apply h-0.5 bg-gradient-to-r from-cyan to-transparent;
+  }
+}
+
+/* ── Recharts overrides ───────────────────────────────────────────────────── */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #1E3A5F !important;
+  stroke-opacity: 0.6 !important;
+}
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+.recharts-default-tooltip {
+  background: #1A2B45 !important;
+  border: 1px solid #1E3A5F !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5) !important;
+}
+.recharts-tooltip-label {
+  color: #8892B0 !important;
+  font-size: 12px !important;
+  margin-bottom: 4px !important;
+}
+.recharts-tooltip-item {
+  color: #F4F6F9 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12px !important;
+}
+.recharts-legend-item-text {
+  color: #8892B0 !important;
+  font-size: 12px !important;
+}
+.recharts-text {
+  fill: #8892B0 !important;
+  font-size: 11px !important;
+}
+
+/* ── Nivo chart overrides ─────────────────────────────────────────────────── */
+[class*='nivo_'] text {
+  fill: #8892B0 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 11px !important;
+}
+
+/* ── Framer Motion initial ────────────────────────────────────────────────── */
+.motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    will-change: transform, opacity;
+  }
+}
+
+/* ── Focus ring ─────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid rgba(0, 212, 255, 0.5);
+  outline-offset: 2px;
+}
