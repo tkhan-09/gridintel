@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useCopilotStore } from "@/store/copilotStore";
 import { useAuthStore } from "@/store/authStore";
 import {
   Bot,
@@ -16,6 +15,13 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  Database,
+  ChevronDown,
+  ChevronUp,
+  Zap,
+  FileSearch,
+  MessageSquare,
+  Code2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,6 +38,19 @@ interface ToolResult {
   message?: string;
 }
 
+// New: backend response shape
+interface CopilotResponse {
+  response: string;
+  provider?: string;
+  intent?: string;
+  confidence?: number;
+  entities?: Record<string, unknown>;
+  sql_query?: string;
+  data_rows?: Record<string, unknown>[];
+  rag_used?: boolean;
+  source?: "sql" | "rag" | "direct";
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -39,6 +58,8 @@ interface Message {
   toolResults?: ToolResult[];
   timestamp: Date;
   isStreaming?: boolean;
+  // New fields from backend
+  meta?: CopilotResponse;
 }
 
 // ─── Bengali Suggested Query Templates ───────────────────────────────────────
@@ -121,20 +142,73 @@ const SUGGESTED_QUERIES: { bn: string; en: string; category: string }[] = [
   },
 ];
 
+// ─── Intent display config ────────────────────────────────────────────────────
+
+const INTENT_CONFIG: Record<
+  string,
+  { label: string; labelBn: string; color: string; icon: React.ReactNode }
+> = {
+  sql_analytics: {
+    label: "SQL Analytics",
+    labelBn: "ডেটা বিশ্লেষণ",
+    color: "bg-violet-900/40 border-violet-600/50 text-violet-300",
+    icon: <Database size={10} />,
+  },
+  sql_lookup: {
+    label: "SQL Lookup",
+    labelBn: "ডেটা অনুসন্ধান",
+    color: "bg-blue-900/40 border-blue-600/50 text-blue-300",
+    icon: <Database size={10} />,
+  },
+  api_action: {
+    label: "Action",
+    labelBn: "একশন",
+    color: "bg-amber-900/40 border-amber-600/50 text-amber-300",
+    icon: <Zap size={10} />,
+  },
+  ask_policy: {
+    label: "Policy / Docs",
+    labelBn: "নীতিমালা",
+    color: "bg-teal-900/40 border-teal-600/50 text-teal-300",
+    icon: <FileSearch size={10} />,
+  },
+  general_qa: {
+    label: "General Q&A",
+    labelBn: "সাধারণ প্রশ্ন",
+    color: "bg-slate-700/60 border-slate-600/50 text-slate-300",
+    icon: <MessageSquare size={10} />,
+  },
+  greeting: {
+    label: "Greeting",
+    labelBn: "অভিবাদন",
+    color: "bg-green-900/40 border-green-600/50 text-green-300",
+    icon: <MessageSquare size={10} />,
+  },
+  out_of_scope: {
+    label: "Out of Scope",
+    labelBn: "বিষয়বহির্ভূত",
+    color: "bg-red-900/40 border-red-600/50 text-red-300",
+    icon: <AlertTriangle size={10} />,
+  },
+};
+
+const SOURCE_CONFIG: Record<
+  string,
+  { label: string; color: string }
+> = {
+  sql:    { label: "SQL",  color: "text-violet-400" },
+  rag:    { label: "RAG",  color: "text-teal-400" },
+  direct: { label: "AI",   color: "text-blue-400" },
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseMarkdownTable(md: string): { columns: string[]; rows: string[][] } | null {
   const lines = md.trim().split("\n").filter((l) => l.trim().startsWith("|"));
   if (lines.length < 3) return null;
-  const columns = lines[0]
-    .split("|")
-    .slice(1, -1)
-    .map((c) => c.trim());
+  const columns = lines[0].split("|").slice(1, -1).map((c) => c.trim());
   const rows = lines.slice(2).map((l) =>
-    l
-      .split("|")
-      .slice(1, -1)
-      .map((c) => c.trim())
+    l.split("|").slice(1, -1).map((c) => c.trim())
   );
   return { columns, rows };
 }
@@ -143,7 +217,6 @@ function extractToolResults(content: string): { clean: string; results: ToolResu
   const results: ToolResult[] = [];
   let clean = content;
 
-  // Extract ```table blocks
   const tableRegex = /```table\n([\s\S]*?)```/g;
   clean = clean.replace(tableRegex, (_, body) => {
     const parsed = parseMarkdownTable(body);
@@ -151,7 +224,6 @@ function extractToolResults(content: string): { clean: string; results: ToolResu
     return "";
   });
 
-  // Extract markdown tables inline
   const mdTableRegex = /(\|.+\|\n\|[-| :]+\|\n(?:\|.+\|\n?)+)/g;
   clean = clean.replace(mdTableRegex, (match) => {
     const parsed = parseMarkdownTable(match);
@@ -159,7 +231,6 @@ function extractToolResults(content: string): { clean: string; results: ToolResu
     return "";
   });
 
-  // Extract ```metric blocks
   const metricRegex = /```metric\ntitle:(.*)\nvalue:(.*)\nunit:(.*)\n```/g;
   clean = clean.replace(metricRegex, (_, title, value, unit) => {
     results.push({ type: "metric", title: title.trim(), value: value.trim(), unit: unit.trim() });
@@ -171,13 +242,21 @@ function extractToolResults(content: string): { clean: string; results: ToolResu
 
 // ─── Sub-Components ───────────────────────────────────────────────────────────
 
-function ToolResultTable({ result }: { result: ToolResult }) {
+function ToolResultTable({
+  result,
+  title,
+}: {
+  result: ToolResult;
+  title?: string;
+}) {
   if (!result.columns || !result.rows) return null;
   return (
     <div className="mt-3 rounded-lg border border-slate-600/50 overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 bg-slate-700/60 border-b border-slate-600/50">
         <Table2 size={14} className="text-blue-400" />
-        {result.title && <span className="text-xs font-medium text-slate-300">{result.title}</span>}
+        <span className="text-xs font-medium text-slate-300">
+          {title || result.title || "ডেটা"}
+        </span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -201,7 +280,7 @@ function ToolResultTable({ result }: { result: ToolResult }) {
               >
                 {row.map((cell, ci) => (
                   <td key={ci} className="px-3 py-2 text-slate-300 whitespace-nowrap">
-                    {cell}
+                    {String(cell)}
                   </td>
                 ))}
               </tr>
@@ -209,6 +288,115 @@ function ToolResultTable({ result }: { result: ToolResult }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// SQL data_rows → table (from backend)
+function SqlDataTable({ rows }: { rows: Record<string, unknown>[] }) {
+  if (!rows || rows.length === 0) return null;
+  const columns = Object.keys(rows[0]);
+  return (
+    <div className="mt-3 rounded-lg border border-violet-700/40 overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 bg-violet-900/20 border-b border-violet-700/30">
+        <Database size={13} className="text-violet-400" />
+        <span className="text-xs font-medium text-violet-300">
+          Query Result — {rows.length} row{rows.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+      <div className="overflow-x-auto max-h-64 overflow-y-auto">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0">
+            <tr className="bg-slate-800/80">
+              {columns.map((col) => (
+                <th
+                  key={col}
+                  className="px-3 py-2 text-left text-violet-300 font-medium whitespace-nowrap border-b border-slate-600/40"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, ri) => (
+              <tr
+                key={ri}
+                className="border-b border-slate-700/30 hover:bg-violet-900/10 transition-colors"
+              >
+                {columns.map((col) => (
+                  <td key={col} className="px-3 py-2 text-slate-300 whitespace-nowrap">
+                    {row[col] === null || row[col] === undefined
+                      ? <span className="text-slate-600 italic">null</span>
+                      : String(row[col])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// Collapsible SQL query viewer
+function SqlQueryViewer({ sql }: { sql: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-violet-400 transition-colors"
+      >
+        <Code2 size={11} />
+        <span>Generated SQL</span>
+        {open ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+      </button>
+      {open && (
+        <pre className="mt-2 p-3 bg-slate-900/80 border border-slate-700/50 rounded-lg text-xs text-green-300 overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">
+          {sql}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+// Intent + source badge row
+function IntentBadge({
+  intent,
+  confidence,
+  source,
+  language,
+}: {
+  intent?: string;
+  confidence?: number;
+  source?: string;
+  language: Language;
+}) {
+  if (!intent || intent === "greeting") return null;
+  const cfg = INTENT_CONFIG[intent];
+  const srcCfg = source ? SOURCE_CONFIG[source] : null;
+  if (!cfg) return null;
+
+  const confidencePct = confidence ? Math.round(confidence * 100) : null;
+
+  return (
+    <div className="flex items-center gap-2 mt-2 flex-wrap">
+      <span
+        className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium ${cfg.color}`}
+      >
+        {cfg.icon}
+        {language === "bn" ? cfg.labelBn : cfg.label}
+        {confidencePct !== null && (
+          <span className="opacity-60 ml-0.5">{confidencePct}%</span>
+        )}
+      </span>
+      {srcCfg && (
+        <span className={`text-[10px] font-mono ${srcCfg.color} opacity-70`}>
+          via {srcCfg.label}
+        </span>
+      )}
     </div>
   );
 }
@@ -238,7 +426,11 @@ function ToolResultStatus({ result }: { result: ToolResult }) {
           : "bg-red-900/20 border-red-700/40 text-red-300"
       }`}
     >
-      {isSuccess ? <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" /> : <XCircle size={14} className="mt-0.5 flex-shrink-0" />}
+      {isSuccess ? (
+        <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" />
+      ) : (
+        <XCircle size={14} className="mt-0.5 flex-shrink-0" />
+      )}
       <span>{result.message}</span>
     </div>
   );
@@ -251,11 +443,23 @@ function renderMarkdown(text: string): React.ReactNode[] {
   while (i < lines.length) {
     const line = lines[i];
     if (line.startsWith("### ")) {
-      nodes.push(<h3 key={i} className="text-sm font-semibold text-blue-300 mt-3 mb-1">{line.slice(4)}</h3>);
+      nodes.push(
+        <h3 key={i} className="text-sm font-semibold text-blue-300 mt-3 mb-1">
+          {line.slice(4)}
+        </h3>
+      );
     } else if (line.startsWith("## ")) {
-      nodes.push(<h2 key={i} className="text-sm font-bold text-blue-200 mt-3 mb-1">{line.slice(3)}</h2>);
+      nodes.push(
+        <h2 key={i} className="text-sm font-bold text-blue-200 mt-3 mb-1">
+          {line.slice(3)}
+        </h2>
+      );
     } else if (line.startsWith("**") && line.endsWith("**")) {
-      nodes.push(<p key={i} className="text-sm font-semibold text-slate-200 my-0.5">{line.slice(2, -2)}</p>);
+      nodes.push(
+        <p key={i} className="text-sm font-semibold text-slate-200 my-0.5">
+          {line.slice(2, -2)}
+        </p>
+      );
     } else if (line.startsWith("- ") || line.startsWith("* ")) {
       nodes.push(
         <li key={i} className="text-sm text-slate-300 ml-4 list-disc my-0.5">
@@ -265,7 +469,6 @@ function renderMarkdown(text: string): React.ReactNode[] {
     } else if (line.trim() === "") {
       nodes.push(<div key={i} className="h-2" />);
     } else {
-      // inline bold
       const parts = line.split(/(\*\*[^*]+\*\*)/g);
       nodes.push(
         <p key={i} className="text-sm text-slate-300 leading-relaxed">
@@ -286,11 +489,21 @@ function renderMarkdown(text: string): React.ReactNode[] {
   return nodes;
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({
+  message,
+  language,
+}: {
+  message: Message;
+  language: Language;
+}) {
   const isUser = message.role === "user";
   const { clean, results } = isUser
     ? { clean: message.content, results: [] as ToolResult[] }
     : extractToolResults(message.content);
+
+  const meta = message.meta;
+  const hasSqlData = !isUser && meta?.data_rows && meta.data_rows.length > 0;
+  const hasSqlQuery = !isUser && meta?.sql_query;
 
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"} mb-5`}>
@@ -300,13 +513,17 @@ function MessageBubble({ message }: { message: Message }) {
           isUser ? "bg-blue-600" : "bg-slate-600"
         }`}
       >
-        {isUser ? <User size={15} className="text-white" /> : <Bot size={15} className="text-blue-300" />}
+        {isUser ? (
+          <User size={15} className="text-white" />
+        ) : (
+          <Bot size={15} className="text-blue-300" />
+        )}
       </div>
 
       {/* Bubble */}
-      <div className={`max-w-[75%] ${isUser ? "items-end" : "items-start"} flex flex-col`}>
+      <div className={`max-w-[78%] ${isUser ? "items-end" : "items-start"} flex flex-col`}>
         <div
-          className={`rounded-2xl px-4 py-3 ${
+          className={`rounded-2xl px-4 py-3 w-full ${
             isUser
               ? "bg-blue-700 text-white rounded-tr-sm"
               : "bg-slate-700/70 border border-slate-600/40 rounded-tl-sm"
@@ -325,32 +542,92 @@ function MessageBubble({ message }: { message: Message }) {
           )}
         </div>
 
-        {/* Tool Results */}
+        {/* SQL data table (from backend data_rows) */}
+        {hasSqlData && (
+          <div className="w-full">
+            <SqlDataTable rows={meta!.data_rows!} />
+          </div>
+        )}
+
+        {/* Markdown tool results (table / metric / status) */}
         {!isUser && results.length > 0 && (
           <div className="w-full mt-1">
             {results.map((r, i) => {
               if (r.type === "table") return <ToolResultTable key={i} result={r} />;
               if (r.type === "metric") return <ToolResultMetric key={i} result={r} />;
-              if (r.type === "error" || r.type === "success") return <ToolResultStatus key={i} result={r} />;
+              if (r.type === "error" || r.type === "success")
+                return <ToolResultStatus key={i} result={r} />;
               return null;
             })}
           </div>
         )}
 
+        {/* SQL query viewer + intent badge */}
+        {!isUser && (
+          <div className="w-full px-1">
+            {hasSqlQuery && <SqlQueryViewer sql={meta!.sql_query!} />}
+            <IntentBadge
+              intent={meta?.intent}
+              confidence={meta?.confidence}
+              source={meta?.source}
+              language={language}
+            />
+          </div>
+        )}
+
         {/* Timestamp */}
         <span className="text-xs text-slate-500 mt-1 px-1">
-          {message.timestamp.toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })}
+          {message.timestamp.toLocaleTimeString("bn-BD", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </span>
       </div>
     </div>
   );
 }
 
+// ─── API call ─────────────────────────────────────────────────────────────────
+
+async function sendToBackend(
+  message: string,
+  history: Array<{ role: string; content: string }>
+): Promise<CopilotResponse> {
+  const token =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("gridintel-auth") || "{}")?.state
+          ?.token
+      : null;
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/copilot/chat`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        message,
+        session_id: "",
+        conversation_history: history,
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`API error ${res.status}: ${err}`);
+  }
+  return res.json();
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AICopilotPage() {
-  const { messages, isLoading, send, clearHistory } = useCopilotStore();
   const { user } = useAuthStore();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState("");
   const [language, setLanguage] = useState<Language>("bn");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -361,11 +638,56 @@ export default function AICopilotPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // Build conversation_history for backend (last 10 turns)
+  const buildHistory = () =>
+    messages
+      .slice(-10)
+      .map((m) => ({ role: m.role, content: m.content }));
+
+  const clearHistory = () => setMessages([]);
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
+
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: text.trim(),
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+
+    try {
+      const history = buildHistory();
+      const data = await sendToBackend(text.trim(), history);
+
+      const assistantMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.response,
+        timestamp: new Date(),
+        meta: data,
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch (err) {
+      const errMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `❌ Error: ${err instanceof Error ? err.message : "Unknown error"}`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errMsg]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput("");
-    await send(text);
+    await sendMessage(text);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -377,11 +699,8 @@ export default function AICopilotPage() {
 
   const handleTemplateClick = async (query: { bn: string; en: string }) => {
     const text = language === "bn" ? query.bn : query.en;
-    setInput(text);
-    inputRef.current?.focus();
-    // Auto-send
-    await send(text);
     setInput("");
+    await sendMessage(text);
   };
 
   const categories = Array.from(new Set(SUGGESTED_QUERIES.map((q) => q.category)));
@@ -528,12 +847,16 @@ export default function AICopilotPage() {
                 Ask questions about generation, MOD data, billing, energy balance, anomalies and more.
               </p>
               <div className="mt-6 grid grid-cols-3 gap-3 max-w-lg">
-                {["NL → SQL", "Vector RAG", "AI Tools"].map((tag) => (
+                {[
+                  { label: "NL → SQL", color: "text-violet-400 border-violet-800/50" },
+                  { label: "Vector RAG", color: "text-teal-400 border-teal-800/50" },
+                  { label: "Intent AI", color: "text-blue-400 border-blue-800/50" },
+                ].map((tag) => (
                   <div
-                    key={tag}
-                    className="text-xs text-slate-500 border border-slate-700 rounded-lg px-3 py-2 text-center"
+                    key={tag.label}
+                    className={`text-xs border rounded-lg px-3 py-2 text-center ${tag.color}`}
                   >
-                    {tag}
+                    {tag.label}
                   </div>
                 ))}
               </div>
@@ -541,7 +864,7 @@ export default function AICopilotPage() {
           ) : (
             <>
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} />
+                <MessageBubble key={msg.id} message={msg} language={language} />
               ))}
               {isLoading && (
                 <div className="flex gap-3 mb-5">
